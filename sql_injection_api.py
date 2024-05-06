@@ -7,12 +7,15 @@ from waitress import serve
 app = Flask(__name__)
 CORS(app)  # Allow Cross-Origin Resource Sharing
 
-# Load the trained models and TF-IDF vectorizers for SQL injection and XSS detection
+# Load the trained models and TF-IDF vectorizers for injection detection
 tfidf_vectorizer_sql = joblib.load("tfidf_vectorizer_sql.pkl")
 model_sql = joblib.load("trained_model_sql.pkl")
 
 tfidf_vectorizer_xss = joblib.load("tfidf_vectorizer_xss.pkl")
 model_xss = joblib.load("trained_model_xss.pkl")
+
+tfidf_vectorizer_html = joblib.load("tfidf_vectorizer_html.pkl")
+model_html = joblib.load("trained_model_html.pkl")
 
 @app.route('/', methods=['POST'])
 def detect_injections_api():
@@ -33,11 +36,21 @@ def detect_injections_api():
     prediction_xss_username = model_xss.predict(query_xss_username)
     prediction_xss_password = model_xss.predict(query_xss_password)
 
+    # Vectorize input for HTML injection detection
+    query_html_username = tfidf_vectorizer_html.transform([username.lower()])
+    query_html_password = tfidf_vectorizer_html.transform([password.lower()])
+    
+    # Predict HTML injection for username and password
+    prediction_html_username = model_html.predict(query_html_username)
+    prediction_html_password = model_html.predict(query_html_password)
+
     response = {
         "username_is_sql_injection": bool(prediction_sql_username),
         "password_is_sql_injection": bool(prediction_sql_password),
         "username_is_xss": bool(prediction_xss_username),
         "password_is_xss": bool(prediction_xss_password),
+        "username_is_html_injection": bool(prediction_html_username),
+        "password_is_html_injection": bool(prediction_html_password),
         "message": "No injection detected"
     }
 
@@ -45,6 +58,8 @@ def detect_injections_api():
         response["message"] = "SQL Injection detected"
     elif response["username_is_xss"] or response["password_is_xss"]:
         response["message"] = "XSS detected"
+    elif response["username_is_html_injection"] or response["password_is_html_injection"]:
+        response["message"] = "HTML Injection detected"
 
     return jsonify(response)
 
