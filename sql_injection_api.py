@@ -55,11 +55,11 @@ def detect_injections_api():
     }
 
     if response["username_is_sql_injection"] or response["password_is_sql_injection"]:
-        response["message"] = "SQL Injection detected"
+        response["message"] = "Malicious Input detected"
     elif response["username_is_xss"] or response["password_is_xss"]:
-        response["message"] = "XSS detected"
+        response["message"] = "Malicious Input detected"
     elif response["username_is_html_injection"] or response["password_is_html_injection"]:
-        response["message"] = "HTML Injection detected"
+        response["message"] = "Malicious Input detected"
 
     return jsonify(response)
 
